@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lari Traders — Enterprise Cloud Operations Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a12;
+      --card-bg: rgba(15, 22, 36, 0.82);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(30, 41, 62, 0.9);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.2);
+      --text: #f3f4f6;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.12) 0px, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.08) 0px, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.04) 0px, transparent 50%);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* Top Nav / Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #10b981);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    .brand-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+    .brand-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 6px;
+      background: rgba(59, 130, 246, 0.18); color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .brand-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      background: rgba(16, 185, 129, 0.12); color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981; box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } }
+
+    /* Button styles */
+    .btn {
+      background: #1e293b; color: #fff;
+      border: 1px solid var(--card-border);
+      padding: 8px 14px; border-radius: 8px;
+      font-family: inherit; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn:hover { background: #334155; border-color: rgba(255,255,255,0.2); }
+    .btn-primary { background: #2563eb; border-color: #3b82f6; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #059669; border-color: #10b981; }
+    .btn-success:hover { background: #047857; }
+    .btn-warning { background: #d97706; border-color: #f59e0b; color: #fff; }
+    .btn-warning:hover { background: #b45309; }
+    .btn-danger { background: #dc2626; border-color: #ef4444; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 5px 10px; font-size: 11.5px; border-radius: 6px; }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--card-border); }
+
+    /* Quota Grid */
+    .quota-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 16px; margin-bottom: 24px;
+    }
+    .quota-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 20px;
+      position: relative; overflow: hidden;
+    }
+    .quota-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+    .quota-card.acc1::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .quota-card.acc2::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    
+    .quota-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .quota-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; }
+    .quota-tag.acc1 { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+    .quota-tag.acc2 { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+    
+    .quota-stats { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .quota-number { font-size: 26px; font-weight: 800; font-family: var(--font-mono); }
+    .quota-total { font-size: 13px; color: var(--text-muted); }
+    .progress-bar-bg { height: 9px; background: rgba(255,255,255,0.06); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+    .progress-fill { height: 100%; border-radius: 8px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    .progress-fill.acc1 { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .progress-fill.acc2 { background: linear-gradient(90deg, #10b981, #34d399); }
+    .quota-footer { font-size: 11.5px; color: var(--text-muted); display: flex; justify-content: space-between; }
+    .quota-safe-badge { color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+
+    /* Mission Control Services Grid */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 16px; margin-bottom: 24px;
+    }
+    .service-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 22px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .service-card:hover { border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    
+    .svc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .svc-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .svc-account { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    
+    .status-badge {
+      font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 6px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .status-badge.live { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge.connected { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge.down { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-badge.suspended { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .svc-metrics {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 18px; padding: 12px;
+      background: rgba(0,0,0,0.25); border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .metric-item { display: flex; flex-direction: column; }
+    .metric-label { font-size: 11px; color: var(--text-subtle); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+    .metric-value { font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
+    .latency-fast { color: #34d399; }
+    .latency-slow { color: #fbbf24; }
+
+    .svc-actions {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Diagnostics & Audit Tabs */
+    .tab-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 20px;
+      margin-bottom: 24px;
+    }
+    .tab-nav { display: flex; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { background: #1e293b; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Secrets Vault Table */
+    .vault-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; }
+    .vault-table th { text-align: left; padding: 10px 12px; color: var(--text-subtle); border-bottom: 1px solid var(--card-border); font-size: 11px; text-transform: uppercase; }
+    .vault-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .vault-key { color: #93c5fd; font-weight: 600; }
+    .vault-val-box { display: flex; align-items: center; gap: 8px; }
+    .vault-val-text { background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); flex: 1; word-break: break-all; }
+    .vault-val-masked { letter-spacing: 2px; color: var(--text-subtle); }
+
+    /* Audit Events Timeline */
+    .event-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .event-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-subtle); min-width: 140px; }
+    .event-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+    .event-details { font-size: 12.5px; color: var(--text); flex: 1; }
+
+    /* Diagnostic Sandbox */
+    .sandbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+    .sandbox-box { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; }
+    .sandbox-input {
+      width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1);
+      color: #fff; padding: 10px 12px; border-radius: 6px;
+      font-family: inherit; font-size: 12.5px; margin-bottom: 10px; resize: vertical;
+    }
+    .sandbox-output {
+      background: #020617; border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px; padding: 12px; font-family: var(--font-mono);
+      font-size: 12px; color: #a5b4fc; min-height: 80px; max-height: 200px; overflow-y: auto;
+    }
+
+    /* PIN Gate Modal */
+    #pinGate {
+      position: fixed; inset: 0; background: rgba(7, 10, 18, 0.95);
+      backdrop-filter: blur(20px); z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .pin-box {
+      background: #0f172a; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 32px; width: 100%; max-width: 380px;
+      text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
+    .pin-box h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .pin-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+    .pin-input {
+      width: 100%; letter-spacing: 12px; font-size: 28px; font-weight: 800;
+      text-align: center; padding: 12px; border-radius: 10px;
+      background: #020617; border: 2px solid #334155; color: #fff;
+      font-family: var(--font-mono); margin-bottom: 20px; outline: none;
+    }
+    .pin-input:focus { border-color: #3b82f6; box-shadow: 0 0 16px var(--accent-glow); }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; padding: 12px 18px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 10000;
+      display: none; align-items: center; gap: 8px; animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- 🔐 Master Security PIN Gate -->
+  <div id="pinGate">
+    <div class="pin-box">
+      <div style="font-size: 38px; margin-bottom: 12px;">🛡️</div>
+      <h2>Enterprise Cloud Console</h2>
+      <p>Enter Master Security PIN to access operations</p>
+      <input type="password" id="pinInput" class="pin-input" maxlength="6" placeholder="••••••" autofocus />
+      <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="verifyPin()">
+        Unlock Console
+      </button>
+      <div id="pinError" style="color: #f87171; font-size: 12px; margin-top: 10px; display: none;">Invalid PIN. Please try again.</div>
+    </div>
+  </div>
+
+  <div class="container" id="mainDashboard" style="display: none;">
+
+    <!-- Top Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div>
+          <div class="brand-title">
+            LARI CLOUD OPERATIONS
+            <span class="brand-badge">V2.0 ENTERPRISE</span>
+          </div>
+          <div class="brand-subtitle">Oracle WebLogic & AWS Systems Manager Governance Center</div>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span>ALL CLOUD SERVICES OPERATIONAL</span>
+        </div>
+        <button class="btn btn-sm" onclick="fetchLiveStatus()" id="btnRefresh">🔄 Refresh</button>
+        <button class="btn btn-sm btn-danger" onclick="lockConsole()">🔒 Lock</button>
+      </div>
+    </header>
+
+    <!-- Quota & Burn Rate Forecaster (AWS Cost Explorer standard) -->
+    <div class="section-title">Cloud Resource Quota & Burn Rate Forecaster</div>
+    <div class="quota-grid">
+      
+      <!-- Account 1 -->
+      <div class="quota-card acc1">
+        <div class="quota-header">
+          <span class="quota-tag acc1">Account 1 • arhaanmashkoor9@gmail.com</span>
+          <span class="quota-safe-badge">✓ Zero Shutdown Risk</span>
+        </div>
+        <div class="quota-stats">
+          <div class="quota-number" id="acc1Hours">216 / 750h</div>
+          <div class="quota-total" id="acc1Percent">28.8% used</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-fill acc1" id="acc1Bar" style="width: 28.8%;"></div>
+        </div>
+        <div class="quota-footer">
+          <span>Dedicated: <strong>laritraders-backend</strong></span>
+          <span>Projected: <strong>744h / 750h (SAFE)</strong></span>
+        </div>
+      </div>
+
+      <!-- Account 2 -->
+      <div class="quota-card acc2">
+        <div class="quota-header">
+          <span class="quota-tag acc2">Account 2 • mashkooralam154@gmail.com</span>
+          <span class="quota-safe-badge">✓ Scale-to-Zero Active</span>
+        </div>
+        <div class="quota-stats">
+          <div class="quota-number" id="acc2Hours">12 / 750h</div>
+          <div class="quota-total" id="acc2Percent">1.6% used</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-fill acc2" id="acc2Bar" style="width: 1.6%;"></div>
+        </div>
+        <div class="quota-footer">
+          <span>Cluster: <strong>WhatsApp + OCR Services</strong></span>
+          <span>Hours Remaining: <strong id="acc2Remain">738h</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mission Control Services Grid -->
+    <div class="section-title">Mission Control Service Grid (Lifecycle & Health)</div>
+    <div class="services-grid">
+
+      <!-- Card 1: Backend -->
+      <div class="service-card" id="card-backend">
+        <div>
+          <div class="svc-header">
+            <div>
+              <div class="svc-title">
+                <span>☕ laritraders-backend</span>
+              </div>
+              <div class="svc-account">Render Account 1 • Spring Boot 3.2 • Java 17</div>
+            </div>
+            <span class="status-badge live" id="badge-backend">● LIVE (200 OK)</span>
+          </div>
+
+          <div class="svc-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Latency</span>
+              <span class="metric-value latency-fast" id="lat-backend">95 ms</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Database</span>
+              <span class="metric-value" style="color: #60a5fa;" id="db-backend">Neon SG (OK)</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Region</span>
+              <span class="metric-value">Singapore</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="svc-actions">
+          <button class="btn btn-sm btn-primary" onclick="triggerDeploy('backend', false)">🔄 Redeploy</button>
+          <button class="btn btn-sm" onclick="triggerDeploy('backend', true)">⚡ Clean Cache</button>
+          <button class="btn btn-sm" onclick="triggerRestart('backend')">🔁 Restart</button>
+          <button class="btn btn-sm" onclick="openVault('backend')">🔑 Env Vault</button>
+          <button class="btn btn-sm" onclick="openAudit('backend')">📜 Audit Log</button>
+        </div>
+      </div>
+
+      <!-- Card 2: WhatsApp Microservice -->
+      <div class="service-card" id="card-wa">
+        <div>
+          <div class="svc-header">
+            <div>
+              <div class="svc-title">
+                <span>💬 laritraders-whatsapp</span>
+              </div>
+              <div class="svc-account">Render Account 2 • Baileys Engine v3 • Node.js</div>
+            </div>
+            <span class="status-badge connected" id="badge-wa">● CONNECTED</span>
+          </div>
+
+          <div class="svc-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Latency</span>
+              <span class="metric-value latency-fast" id="lat-wa">110 ms</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Session State</span>
+              <span class="metric-value" style="color: #34d399;" id="state-wa">Authenticated</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Power State</span>
+              <span class="metric-value" id="power-wa">Running</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="svc-actions">
+          <button class="btn btn-sm btn-warning" onclick="toggleSuspend('wa')" id="btn-suspend-wa">⏸️ Suspend (Sleep)</button>
+          <button class="btn btn-sm btn-primary" onclick="triggerDeploy('wa', false)">🔄 Redeploy</button>
+          <button class="btn btn-sm" onclick="triggerRestart('wa')">🔁 Restart</button>
+          <button class="btn btn-sm" onclick="openVault('wa')">🔑 Env Vault</button>
+          <button class="btn btn-sm" onclick="openAudit('wa')">📜 Audit Log</button>
+        </div>
+      </div>
+
+      <!-- Card 3: OCR Microservice -->
+      <div class="service-card" id="card-ocr">
+        <div>
+          <div class="svc-header">
+            <div>
+              <div class="svc-title">
+                <span>👁️ laritraders-ocr</span>
+              </div>
+              <div class="svc-account">Render Account 2 • Python FastAPI • Gemini 2.5</div>
+            </div>
+            <span class="status-badge live" id="badge-ocr">● HEALTHY</span>
+          </div>
+
+          <div class="svc-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Latency</span>
+              <span class="metric-value latency-fast" id="lat-ocr">130 ms</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Active Model</span>
+              <span class="metric-value" style="color: #a78bfa;">gemini-2.5-flash</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Security</span>
+              <span class="metric-value" style="color: #34d399;">X-Secret (403 Safe)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="svc-actions">
+          <button class="btn btn-sm btn-warning" onclick="toggleSuspend('ocr')" id="btn-suspend-ocr">⏸️ Suspend (Sleep)</button>
+          <button class="btn btn-sm btn-primary" onclick="triggerDeploy('ocr', false)">🔄 Redeploy</button>
+          <button class="btn btn-sm" onclick="triggerRestart('ocr')">🔁 Restart</button>
+          <button class="btn btn-sm" onclick="openVault('ocr')">🔑 Env Vault</button>
+          <button class="btn btn-sm" onclick="openAudit('ocr')">📜 Audit Log</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Diagnostic Playground & Management Tabs -->
+    <div class="tab-container">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-vault')">🔑 Parameter & Secrets Vault</button>
+        <button class="tab-btn" onclick="switchTab('tab-audit')">📜 Deployment Audit Trail</button>
+        <button class="tab-btn" onclick="switchTab('tab-sandbox')">🧪 Diagnostic Sandbox</button>
+      </div>
+
+      <!-- Tab 1: Secrets Vault -->
+      <div class="tab-content active" id="tab-vault">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 13px; color: var(--text-muted);">Active Service:</span>
+            <select id="vaultSelect" class="btn btn-sm" onchange="loadVaultVars()" style="background: #0f172a;">
+              <option value="backend">laritraders-backend (Account 1)</option>
+              <option value="wa">laritraders-whatsapp (Account 2)</option>
+              <option value="ocr">laritraders-ocr (Account 2)</option>
+            </select>
+          </div>
+          <button class="btn btn-sm btn-success" onclick="saveVaultVars()">💾 Commit & Save to Cloud</button>
+        </div>
+
+        <table class="vault-table">
+          <thead>
+            <tr>
+              <th style="width: 35%;">Parameter Key</th>
+              <th style="width: 55%;">Value</th>
+              <th style="width: 10%;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="vaultBody">
+            <tr><td colspan="3" style="text-align: center; color: var(--text-subtle);">Select service to view parameters</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tab 2: Deployment Audit Trail -->
+      <div class="tab-content" id="tab-audit">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+          <span style="font-size: 13px; color: var(--text-muted);">Service:</span>
+          <select id="auditSelect" class="btn btn-sm" onchange="loadAuditEvents()" style="background: #0f172a;">
+            <option value="backend">laritraders-backend (Account 1)</option>
+            <option value="wa">laritraders-whatsapp (Account 2)</option>
+            <option value="ocr">laritraders-ocr (Account 2)</option>
+          </select>
+        </div>
+        <div id="auditList">
+          <div style="color: var(--text-subtle); padding: 12px 0;">Loading audit logs...</div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Diagnostic Sandbox -->
+      <div class="tab-content" id="tab-sandbox">
+        <div class="sandbox-grid">
+          
+          <!-- Gemini AI Runner -->
+          <div class="sandbox-box">
+            <h4 style="font-size: 13px; margin-bottom: 8px;">🤖 Gemini 2.5 AI Prompt Diagnostics</h4>
+            <textarea id="aiPrompt" class="sandbox-input" rows="2">Explain automated FMCG bill reconciliation in 1 sentence.</textarea>
+            <button class="btn btn-sm btn-primary" onclick="runAiDiagnostic()" id="btnRunAi">🚀 Fire Prompt & Check Latency</button>
+            <div style="margin-top: 10px;" class="sandbox-output" id="aiOutput">// AI response will appear here...</div>
+          </div>
+
+          <!-- WhatsApp Heartbeat -->
+          <div class="sandbox-box">
+            <h4 style="font-size: 13px; margin-bottom: 8px;">💬 WhatsApp Microservice Ping</h4>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Pings Baileys WebSocket connection without sending spam messages to customers.</p>
+            <button class="btn btn-sm btn-success" onclick="runWaDiagnostic()" id="btnRunWa">⚡ Ping WhatsApp Engine</button>
+            <div style="margin-top: 10px;" class="sandbox-output" id="waOutput">// WhatsApp status will appear here...</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast">🔔 <span id="toastMsg">Notification message</span></div>
+
+  <script>
+    const API_BASE = window.location.origin.includes(':4040') ? 'http://localhost:4040' : '';
+    let currentVaultVars = [];
+    let isWaSuspended = false;
+    let isOcrSuspended = false;
+
+    // ── PIN Authentication ──
+    function checkAuth() {
+      const token = sessionStorage.getItem('lari_ops_token') || localStorage.getItem('lari_ops_token');
+      if (token) {
+        document.getElementById('pinGate').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
+        fetchLiveStatus();
+        loadVaultVars();
+      }
+    }
+
+    async function verifyPin() {
+      const pin = document.getElementById('pinInput').value;
+      if (pin === '945048') {
+        sessionStorage.setItem('lari_ops_token', 'ok-' + Date.now());
+        document.getElementById('pinGate').style.display = 'none';
+        document.getElementById('mainDashboard').style.display = 'block';
+        showToast('Access Granted. Welcome Administrator.');
+        fetchLiveStatus();
+        loadVaultVars();
+      } else {
+        document.getElementById('pinError').style.display = 'block';
+      }
+    }
+
+    document.getElementById('pinInput').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') verifyPin();
+    });
+
+    function lockConsole() {
+      sessionStorage.removeItem('lari_ops_token');
+      localStorage.removeItem('lari_ops_token');
+      document.getElementById('pinInput').value = '';
+      document.getElementById('mainDashboard').style.display = 'none';
+      document.getElementById('pinGate').style.display = 'flex';
+      showToast('Console Locked.');
+    }
+
+    // ── Toast Messages ──
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    // ── Live Status Polling ──
+    async function fetchLiveStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/api/status`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Acc 1 Quota
+        document.getElementById('acc1Hours').innerText = `${data.quota.acc1.hoursUsed} / 750h`;
+        document.getElementById('acc1Percent').innerText = `${data.quota.acc1.percent}% used`;
+        document.getElementById('acc1Bar').style.width = `${data.quota.acc1.percent}%`;
+
+        // Acc 2 Quota
+        document.getElementById('acc2Hours').innerText = `${data.quota.acc2.hoursUsed} / 750h`;
+        document.getElementById('acc2Percent').innerText = `${data.quota.acc2.percent}% used`;
+        document.getElementById('acc2Bar').style.width = `${data.quota.acc2.percent}%`;
+        document.getElementById('acc2Remain').innerText = `${data.quota.acc2.hoursRemain}h`;
+
+        // Backend
+        document.getElementById('lat-backend').innerText = `${data.services.backend.latency} ms`;
+        document.getElementById('db-backend').innerText = data.services.backend.dbStatus || 'Connected';
+        
+        // WhatsApp
+        document.getElementById('lat-wa').innerText = `${data.services.whatsapp.latency} ms`;
+        const waBadge = document.getElementById('badge-wa');
+        waBadge.innerText = `● ${data.services.whatsapp.status}`;
+        waBadge.className = data.services.whatsapp.status === 'CONNECTED' ? 'status-badge connected' : 'status-badge down';
+        document.getElementById('state-wa').innerText = data.services.whatsapp.status;
+        isWaSuspended = data.services.whatsapp.suspended;
+        document.getElementById('btn-suspend-wa').innerText = isWaSuspended ? '▶️ Resume (Wake)' : '⏸️ Suspend (Sleep)';
+
+        // OCR
+        document.getElementById('lat-ocr').innerText = `${data.services.ocr.latency} ms`;
+        isOcrSuspended = data.services.ocr.suspended;
+        document.getElementById('btn-suspend-ocr').innerText = isOcrSuspended ? '▶️ Resume (Wake)' : '⏸️ Suspend (Sleep)';
+
+      } catch (e) {
+        console.error('Status fetch error:', e);
+      }
+    }
+
+    // ── Lifecycle Actions ──
+    async function triggerDeploy(svc, clearCache) {
+      showToast(`Triggering deploy for ${svc} (clearCache: ${clearCache})...`);
+      try {
+        const res = await fetch(`${API_BASE}/api/deploy?service=${svc}&clearCache=${clearCache}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Deploy initiated for ${svc} (${data.deployId || 'Started'})!`);
+        } else {
+          showToast(`Deploy error: ${data.error}`);
+        }
+      } catch (e) {
+        showToast('Deploy request failed: ' + e.message);
+      }
+    }
+
+    async function triggerRestart(svc) {
+      showToast(`Restarting ${svc}...`);
+      try {
+        const res = await fetch(`${API_BASE}/api/restart?service=${svc}`, { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || 'Restart signal delivered');
+      } catch (e) {
+        showToast('Restart failed: ' + e.message);
+      }
+    }
+
+    async function toggleSuspend(svc) {
+      const isSuspended = (svc === 'wa') ? isWaSuspended : isOcrSuspended;
+      const endpoint = isSuspended ? 'resume' : 'suspend';
+      showToast(`Sending ${endpoint} to ${svc}...`);
+      try {
+        const res = await fetch(`${API_BASE}/api/${endpoint}?service=${svc}`, { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || 'Operation successful');
+        fetchLiveStatus();
+      } catch (e) {
+        showToast('Error: ' + e.message);
+      }
+    }
+
+    // ── Secrets Vault ──
+    async function loadVaultVars() {
+      const svc = document.getElementById('vaultSelect').value;
+      const tbody = document.getElementById('vaultBody');
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Fetching encrypted parameters...</td></tr>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/env-vars?service=${svc}`);
+        const data = await res.json();
+        currentVaultVars = data.envVars || [];
+
+        tbody.innerHTML = currentVaultVars.map((v, idx) => `
+          <tr>
+            <td class="vault-key">${v.key}</td>
+            <td>
+              <div class="vault-val-box">
+                <span class="vault-val-text vault-val-masked" id="val-${idx}">${'•'.repeat(Math.min(v.value.length, 24))}</span>
+                <button class="btn btn-sm" onclick="toggleSecret(${idx}, '${v.value.replace(/'/g, "\\'")}')">👁️</button>
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteVar(${idx})">🗑️</button>
+            </td>
+          </tr>
+        `).join('') + `
+          <tr>
+            <td><input id="newKey" placeholder="NEW_VAR_KEY" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px; width:90%; font-family:var(--font-mono); font-size:11px;" /></td>
+            <td><input id="newVal" placeholder="value" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px; width:90%; font-family:var(--font-mono); font-size:11px;" /></td>
+            <td><button class="btn btn-sm btn-primary" onclick="addVar()">➕ Add</button></td>
+          </tr>
+        `;
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="3" style="color:#f87171;">Failed to load vault: ${e.message}</td></tr>`;
+      }
+    }
+
+    function toggleSecret(idx, plainVal) {
+      const el = document.getElementById(`val-${idx}`);
+      if (el.classList.contains('vault-val-masked')) {
+        el.innerText = plainVal;
+        el.classList.remove('vault-val-masked');
+      } else {
+        el.innerText = '•'.repeat(Math.min(plainVal.length, 24));
+        el.classList.add('vault-val-masked');
+      }
+    }
+
+    function addVar() {
+      const k = document.getElementById('newKey').value.trim();
+      const v = document.getElementById('newVal').value.trim();
+      if (!k) return alert('Key is required');
+      currentVaultVars.push({ key: k, value: v });
+      loadVaultVars();
+    }
+
+    function deleteVar(idx) {
+      if (confirm(`Remove parameter ${currentVaultVars[idx].key}?`)) {
+        currentVaultVars.splice(idx, 1);
+        loadVaultVars();
+      }
+    }
+
+    async function saveVaultVars() {
+      const svc = document.getElementById('vaultSelect').value;
+      if (!confirm(`Commit ${currentVaultVars.length} parameters to ${svc}? Render will reload this service.`)) return;
+
+      showToast('Pushing updated parameters to Render...');
+      try {
+        const res = await fetch(`${API_BASE}/api/env-vars?service=${svc}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentVaultVars)
+        });
+        const data = await res.json();
+        showToast(data.message || 'Parameters updated successfully!');
+      } catch (e) {
+        showToast('Save failed: ' + e.message);
+      }
+    }
+
+    // ── Audit Events ──
+    async function loadAuditEvents() {
+      const svc = document.getElementById('auditSelect').value;
+      const el = document.getElementById('auditList');
+      el.innerHTML = '<div style="color: var(--text-subtle);">Fetching audit trail...</div>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/events?service=${svc}`);
+        const data = await res.json();
+        el.innerHTML = (data.events || []).map(ev => `
+          <div class="event-item">
+            <div class="event-time">${new Date(ev.timestamp).toLocaleString()}</div>
+            <span class="event-badge" style="background:#1e293b; color:#93c5fd;">${ev.type}</span>
+            <div class="event-details">
+              <strong>${ev.details?.trigger?.user?.email || 'System / API'}</strong>: 
+              ${ev.details?.commit?.message || ev.type}
+            </div>
+          </div>
+        `).join('') || '<div style="color:var(--text-subtle);">No recent events found.</div>';
+      } catch (e) {
+        el.innerHTML = `<div style="color:#f87171;">Audit load failed: ${e.message}</div>`;
+      }
+    }
+
+    // ── Diagnostics ──
+    async function runAiDiagnostic() {
+      const prompt = document.getElementById('aiPrompt').value;
+      const out = document.getElementById('aiOutput');
+      const btn = document.getElementById('btnRunAi');
+      btn.disabled = true;
+      out.innerText = '⚡ Connecting to Gemini 2.5 Flash via OCR gateway...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/test-ai`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        out.innerText = `[${data.elapsed}s] [Model: ${data.model}]\n\n${data.text}`;
+      } catch (e) {
+        out.innerText = 'Diagnostic Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function runWaDiagnostic() {
+      const out = document.getElementById('waOutput');
+      out.innerText = '⚡ Pinging WhatsApp Engine WebSocket...';
+      try {
+        const res = await fetch(`${API_BASE}/api/test-wa`, { method: 'POST' });
+        const data = await res.json();
+        out.innerText = `Status: ${data.status}\nPing Elapsed: ${data.elapsed} ms\nSocket State: Healthy`;
+      } catch (e) {
+        out.innerText = 'WhatsApp Ping Error: ' + e.message;
+      }
+    }
+
+    // ── Tab Switcher ──
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      if (tabId === 'tab-audit') loadAuditEvents();
+    }
+
+    // Init
+    checkAuth();
+    setInterval(fetchLiveStatus, 15000);
+  </script>
+</body>
+</html>
