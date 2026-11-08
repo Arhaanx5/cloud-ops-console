@@ -1,19 +1,13 @@
 // Cloudflare Pages Serverless Edge Function: Cloud Operations API Proxy
-// Handles Render API integration, security authentication, and deep health checks
+// Reads API Keys securely from Cloudflare Environment Variables (context.env)
 
-const ACC1_KEY = "rnd_RGwnc0JnFnTrKcrO6YAUMg1MHAMl";
 const BACKEND_SVC = "srv-db141g60tbcc739djhi0";
-
-const ACC2_KEY = "rnd_Ds6kefykRNVDdJ5ka2Gyf7hNkD2j";
 const WHATSAPP_SVC = "srv-dbodrlrm8hqs7389qlmg";
 const OCR_SVC = "srv-dbodrlrm8hqs7389qlkg";
 
 const BACKEND_URL = "https://laritraders-backend.onrender.com";
 const WHATSAPP_URL = "https://laritraders-whatsapp.onrender.com";
 const OCR_URL = "https://laritraders-ocr.onrender.com";
-const INTERNAL_SECRET = "lari-wa-internal-secret-uat-2024";
-
-const MASTER_PIN = "945048";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,23 +23,29 @@ function jsonResponse(data, status = 200) {
   });
 }
 
-function getServiceMeta(service) {
+function getServiceMeta(service, env) {
+  // Read dynamically from Cloudflare Pages Environment Variables / Secrets
+  const acc1Key = env?.RENDER_ACC1_KEY || env?.ACC1_KEY || "";
+  const acc2Key = env?.RENDER_ACC2_KEY || env?.ACC2_KEY || "";
+
   switch (service) {
     case "backend":
-      return { key: ACC1_KEY, id: BACKEND_SVC, name: "laritraders-backend", account: "Account 1 (Dedicated)" };
+      return { key: acc1Key, id: BACKEND_SVC, name: "laritraders-backend", account: "Account 1 (Dedicated)" };
     case "wa":
-      return { key: ACC2_KEY, id: WHATSAPP_SVC, name: "laritraders-whatsapp", account: "Account 2 (Microservices)" };
+      return { key: acc2Key, id: WHATSAPP_SVC, name: "laritraders-whatsapp", account: "Account 2 (Microservices)" };
     case "ocr":
-      return { key: ACC2_KEY, id: OCR_SVC, name: "laritraders-ocr", account: "Account 2 (Microservices)" };
+      return { key: acc2Key, id: OCR_SVC, name: "laritraders-ocr", account: "Account 2 (Microservices)" };
     default:
       return null;
   }
 }
 
 export async function onRequest(context) {
-  const { request } = context;
+  const { request, env } = context;
   const url = new URL(request.url);
   const path = url.pathname;
+  const masterPin = env?.MASTER_PIN || "945048";
+  const internalSecret = env?.INTERNAL_SECRET || "lari-wa-internal-secret-uat-2024";
 
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -55,7 +55,7 @@ export async function onRequest(context) {
   if (path.endsWith("/verify-pin") && request.method === "POST") {
     try {
       const body = await request.json();
-      if (body.pin === MASTER_PIN) {
+      if (body.pin === masterPin) {
         return jsonResponse({ success: true, token: "auth-ok-" + Date.now() });
       }
       return jsonResponse({ success: false, error: "Incorrect PIN" }, 401);
@@ -68,7 +68,6 @@ export async function onRequest(context) {
   if (path.endsWith("/status") && request.method === "GET") {
     const now = new Date();
     const day = now.getUTCDate();
-    const daysInMonth = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0).getUTCDate();
 
     const acc1Used = Math.min(750, day * 24);
     const acc1Remain = Math.max(0, 750 - acc1Used);
@@ -78,7 +77,7 @@ export async function onRequest(context) {
     const acc2Remain = 738;
     const acc2Percent = Number(((acc2Used / 750) * 100).toFixed(1));
 
-    // Async pings in parallel
+    // Parallel health checks
     const pings = await Promise.allSettled([
       fetch(`${BACKEND_URL}/actuator/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
       fetch(`${WHATSAPP_URL}/status`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
@@ -158,8 +157,8 @@ export async function onRequest(context) {
   if (path.endsWith("/deploy") && request.method === "POST") {
     const service = url.searchParams.get("service") || "backend";
     const clearCache = url.searchParams.get("clearCache") === "true" ? "clear" : "do_not_clear";
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     const res = await fetch(`https://api.render.com/v1/services/${meta.id}/deploys`, {
       method: "POST",
@@ -176,8 +175,8 @@ export async function onRequest(context) {
   // 4. Restart Service
   if (path.endsWith("/restart") && request.method === "POST") {
     const service = url.searchParams.get("service") || "wa";
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     const res = await fetch(`https://api.render.com/v1/services/${meta.id}/restart`, {
       method: "POST",
@@ -193,8 +192,8 @@ export async function onRequest(context) {
   // 5. Suspend Service (Scale-to-Zero)
   if (path.endsWith("/suspend") && request.method === "POST") {
     const service = url.searchParams.get("service");
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     const res = await fetch(`https://api.render.com/v1/services/${meta.id}/suspend`, {
       method: "POST",
@@ -210,8 +209,8 @@ export async function onRequest(context) {
   // 6. Resume Service
   if (path.endsWith("/resume") && request.method === "POST") {
     const service = url.searchParams.get("service");
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     const res = await fetch(`https://api.render.com/v1/services/${meta.id}/resume`, {
       method: "POST",
@@ -227,8 +226,8 @@ export async function onRequest(context) {
   // 7. Audit Events
   if (path.endsWith("/events") && request.method === "GET") {
     const service = url.searchParams.get("service") || "backend";
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     const res = await fetch(`https://api.render.com/v1/services/${meta.id}/events?limit=8`, {
       headers: { Authorization: `Bearer ${meta.key}` }
@@ -246,8 +245,8 @@ export async function onRequest(context) {
   // 8. Secrets & Env Vars (GET & PUT)
   if (path.endsWith("/env-vars")) {
     const service = url.searchParams.get("service") || "backend";
-    const meta = getServiceMeta(service);
-    if (!meta) return jsonResponse({ error: "Invalid service" }, 400);
+    const meta = getServiceMeta(service, env);
+    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
 
     if (request.method === "GET") {
       const res = await fetch(`https://api.render.com/v1/services/${meta.id}/env-vars`, {
@@ -286,7 +285,7 @@ export async function onRequest(context) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Internal-Secret": INTERNAL_SECRET
+          "X-Internal-Secret": internalSecret
         },
         body: JSON.stringify({ prompt })
       });

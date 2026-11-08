@@ -8,12 +8,24 @@ $ErrorActionPreference = "SilentlyContinue"
 
 $PORT = 4040
 $HTML_FILE = Join-Path $PSScriptRoot "index.html"
+$ENV_FILE = Join-Path $PSScriptRoot ".env"
 
-# Render API Keys
-$ACC1_KEY     = "rnd_RGwnc0JnFnTrKcrO6YAUMg1MHAMl"
+# Load secrets from backend .env
+if (Test-Path $ENV_FILE) {
+    Get-Content $ENV_FILE | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and $line.Contains("=")) {
+            $parts = $line.Split("=", 2)
+            [Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim(), "Process")
+        }
+    }
+}
+
+# Render API Keys from Environment
+$ACC1_KEY     = if ($env:RENDER_ACC1_KEY) { $env:RENDER_ACC1_KEY } else { "rnd_RGwnc0JnFnTrKcrO6YAUMg1MHAMl" }
 $BACKEND_SVC  = "srv-db141g60tbcc739djhi0"
 
-$ACC2_KEY     = "rnd_Ds6kefykRNVDdJ5ka2Gyf7hNkD2j"
+$ACC2_KEY     = if ($env:RENDER_ACC2_KEY) { $env:RENDER_ACC2_KEY } else { "rnd_Ds6kefykRNVDdJ5ka2Gyf7hNkD2j" }
 $WHATSAPP_SVC = "srv-dbodrlrm8hqs7389qlmg"
 $OCR_SVC      = "srv-dbodrlrm8hqs7389qlkg"
 

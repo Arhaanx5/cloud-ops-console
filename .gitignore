@@ -1,3 +1,4 @@
+.env
 *.log
 scratch/
 test*.ps1
