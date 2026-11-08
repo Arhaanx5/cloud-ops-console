@@ -464,6 +464,54 @@
         </div>
       </div>
 
+      <!-- Card 4: Neon Cloud Database -->
+      <div class="service-card" id="card-db" style="border-left: 3px solid #38bdf8;">
+        <div>
+          <div class="svc-header">
+            <div>
+              <div class="svc-title">
+                <span>🐘 Neon Cloud PostgreSQL</span>
+              </div>
+              <div class="svc-account">Serverless • AWS Singapore (ap-southeast-1) • PG 18</div>
+            </div>
+            <span class="status-badge live" id="badge-db" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">● ACTIVE</span>
+          </div>
+
+          <div class="svc-metrics">
+            <div class="metric-item">
+              <span class="metric-label">Storage Used</span>
+              <span class="metric-value" style="color: #38bdf8;" id="db-storage">32.75 MB / 1 GB</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Autoscaling</span>
+              <span class="metric-value" style="color: #34d399;" id="db-cu">0.25 - 2.0 CU</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Branch / Project</span>
+              <span class="metric-value" id="db-branch">production (wild-violet)</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Data Transfer</span>
+              <span class="metric-value" id="db-transfer">4.41 MB</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Endpoint Host</span>
+              <span class="metric-value" style="font-family: monospace; font-size: 11px;" id="db-host">ep-long-dawn...pooler</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">Compute Hours</span>
+              <span class="metric-value" id="db-compute">44.47 hrs</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="svc-actions">
+          <a href="https://console.neon.tech/app/projects/wild-violet-62972724" target="_blank" class="btn btn-sm btn-primary" style="text-decoration: none; text-align: center;">⚡ Neon Console</a>
+          <button class="btn btn-sm" onclick="showDbModal()">🔍 DB Telemetry</button>
+          <button class="btn btn-sm" onclick="fetchStatus()">🔄 Sync Metrics</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- Diagnostic Playground & Management Tabs -->
@@ -605,9 +653,62 @@
         isOcrSuspended = data.services.ocr.suspended;
         document.getElementById('btn-suspend-ocr').innerText = isOcrSuspended ? '▶️ Resume (Wake)' : '⏸️ Suspend (Sleep)';
 
+        // Database (Neon Cloud PostgreSQL)
+        if (data.database) {
+          const db = data.database;
+          const badgeDb = document.getElementById('badge-db');
+          if (badgeDb) {
+            badgeDb.innerText = `● ${db.status || 'ACTIVE'}`;
+            badgeDb.className = db.status === 'ACTIVE' ? 'status-badge live' : 'status-badge warning';
+          }
+          if (document.getElementById('db-storage')) document.getElementById('db-storage').innerText = `${db.storageUsedMb} MB / 1 GB`;
+          if (document.getElementById('db-cu')) document.getElementById('db-cu').innerText = db.autoscaling || '0.25 - 2.0 CU';
+          if (document.getElementById('db-branch')) document.getElementById('db-branch').innerText = `${db.branch} (${db.name || 'lari-traders'})`;
+          if (document.getElementById('db-transfer')) document.getElementById('db-transfer').innerText = `${db.dataTransferMb} MB`;
+          if (document.getElementById('db-compute')) document.getElementById('db-compute').innerText = `${db.computeTimeHours} hrs`;
+          if (document.getElementById('db-host')) document.getElementById('db-host').innerText = db.host ? db.host.split('.')[0] + '...pooler' : 'ep-long-dawn...';
+
+          window.lastDbTelemetry = db;
+        }
+
       } catch (e) {
         console.error('Status fetch error:', e);
       }
+    }
+
+    function showDbModal() {
+      const db = window.lastDbTelemetry || {
+        provider: "Neon PostgreSQL",
+        status: "ACTIVE",
+        projectId: "wild-violet-62972724",
+        name: "lari-traders",
+        region: "AWS Singapore (ap-southeast-1)",
+        pgVersion: 18,
+        endpoint: "ep-long-dawn-az4rk6cj",
+        host: "ep-long-dawn-az4rk6cj-pooler.c-3.ap-southeast-1.aws.neon.tech",
+        branch: "production",
+        storageUsedMb: 32.75,
+        storageLimitMb: 1024,
+        dataTransferMb: 4.41,
+        computeTimeHours: 44.47,
+        autoscaling: "0.25 - 2.0 CU"
+      };
+
+      const info = `🐘 NEON CLUSTER TELEMETRY:
+• Status: ${db.status}
+• Project Name: ${db.name || 'lari-traders'} (${db.projectId})
+• Region: ${db.region}
+• Engine: PostgreSQL v${db.pgVersion}
+• Active Branch: ${db.branch}
+• Endpoint: ${db.endpoint}
+• Pooled Host: ${db.host}
+• Storage Used: ${db.storageUsedMb} MB / 1,024 MB (${((db.storageUsedMb/1024)*100).toFixed(2)}%)
+• Data Transfer: ${db.dataTransferMb} MB
+• Compute Time: ${db.computeTimeHours} hrs
+• Autoscaling Bounds: ${db.autoscaling}
+• Connection String: sslmode=require pooler-mode=transaction`;
+
+      alert(info);
     }
 
     // ── Lifecycle Actions ──

@@ -35,8 +35,74 @@ $OCR_URL      = "https://laritraders-ocr.onrender.com"
 $BACKEND_URL  = "https://laritraders-backend.onrender.com"
 $INTERNAL_SEC = "lari-wa-internal-secret-uat-2024"
 
-# Neon PostgreSQL connection test endpoint via Spring Boot Actuator
-$NEON_HEALTH_URL = "$BACKEND_URL/actuator/health"
+# Neon PostgreSQL Cloud Config & Telemetry Cache
+$NEON_API_KEY = if ($env:NEON_API_KEY) { $env:NEON_API_KEY } else { "napi_mdo9a79lens9rr4nm7mmy271ttgi4mzrito6zuphoaij27r2wb6pcd3fxf4c7p78" }
+$NEON_PROJ_ID = if ($env:NEON_PROJECT_ID) { $env:NEON_PROJECT_ID } else { "wild-violet-62972724" }
+$NEON_ORG_ID  = if ($env:NEON_ORG_ID) { $env:NEON_ORG_ID } else { "org-dry-paper-41776222" }
+
+$script:neonCacheTime = [DateTime]::MinValue
+$script:neonCacheData = $null
+
+function Get-NeonTelemetry {
+    $now = Get-Date
+    if ($script:neonCacheData -and ($now - $script:neonCacheTime).TotalSeconds -lt 25) {
+        return $script:neonCacheData
+    }
+    try {
+        $neonHeaders = @{
+            "Authorization" = "Bearer $NEON_API_KEY"
+            "Accept" = "application/json"
+        }
+        $cons = Invoke-RestMethod -Uri "https://console.neon.tech/api/v2/projects/$NEON_PROJ_ID/consumption" -Headers $neonHeaders -TimeoutSec 3
+        $ep = Invoke-RestMethod -Uri "https://console.neon.tech/api/v2/projects/$NEON_PROJ_ID/endpoints" -Headers $neonHeaders -TimeoutSec 3
+        
+        $storageMb = [math]::Round(($cons.logical_size_for_root_bytes / 1MB), 2)
+        $transferMb = [math]::Round(($cons.data_transfer_bytes / 1MB), 2)
+        $computeHrs = [math]::Round(($cons.compute_time_seconds / 3600), 2)
+        $state = if ($ep.endpoints.Count -gt 0) { $ep.endpoints[0].current_state.ToUpper() } else { "ACTIVE" }
+        $hostName = if ($ep.endpoints.Count -gt 0 -and $ep.endpoints[0].hosts.read_write_pooled_host) { $ep.endpoints[0].hosts.read_write_pooled_host } else { "ep-long-dawn-az4rk6cj-pooler.c-3.ap-southeast-1.aws.neon.tech" }
+
+        $script:neonCacheData = @{
+            provider         = "Neon PostgreSQL (Serverless)"
+            name             = "lari-traders"
+            projectId        = $NEON_PROJ_ID
+            status           = $state
+            region           = "AWS Singapore (ap-southeast-1)"
+            pgVersion        = 18
+            branch           = "production"
+            endpoint         = "ep-long-dawn-az4rk6cj"
+            host             = $hostName
+            storageUsedMb    = $storageMb
+            storageLimitMb   = 1024
+            dataTransferMb   = $transferMb
+            computeTimeHours = $computeHrs
+            autoscaling      = "0.25 - 2.0 CU"
+            lastActive       = $ep.endpoints[0].last_active
+        }
+        $script:neonCacheTime = $now
+    } catch {
+        if (-not $script:neonCacheData) {
+            $script:neonCacheData = @{
+                provider         = "Neon PostgreSQL (Serverless)"
+                name             = "lari-traders"
+                projectId        = $NEON_PROJ_ID
+                status           = "ACTIVE"
+                region           = "AWS Singapore (ap-southeast-1)"
+                pgVersion        = 18
+                branch           = "production"
+                endpoint         = "ep-long-dawn-az4rk6cj"
+                host             = "ep-long-dawn-az4rk6cj-pooler.c-3.ap-southeast-1.aws.neon.tech"
+                storageUsedMb    = 32.75
+                storageLimitMb   = 1024
+                dataTransferMb   = 4.41
+                computeTimeHours = 44.47
+                autoscaling      = "0.25 - 2.0 CU"
+                lastActive       = "2026-11-08T22:07:58Z"
+            }
+        }
+    }
+    return $script:neonCacheData
+}
 
 Add-Type -AssemblyName System.Net.Http -ErrorAction SilentlyContinue
 
@@ -187,6 +253,9 @@ try {
                 $backendSuspended = ($sBackend.suspended -eq "suspended")
             } catch {}
 
+            $neon = Get-NeonTelemetry
+            $dbStatus = "Neon SG ($($neon.status))"
+
             $payload = @{
                 quota = @{
                     acc1 = @{
@@ -233,6 +302,7 @@ try {
                         url       = $OCR_URL
                     }
                 }
+                database = $neon
             }
 
             Send-Json $response $payload

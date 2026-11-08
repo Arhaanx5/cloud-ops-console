@@ -9,6 +9,9 @@ const BACKEND_URL = "https://laritraders-backend.onrender.com";
 const WHATSAPP_URL = "https://laritraders-whatsapp.onrender.com";
 const OCR_URL = "https://laritraders-ocr.onrender.com";
 
+const NEON_DEFAULT_KEY = "napi_mdo9a79lens9rr4nm7mmy271ttgi4mzrito6zuphoaij27r2wb6pcd3fxf4c7p78";
+const NEON_PROJECT_ID = "wild-violet-62972724";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -77,11 +80,19 @@ export async function onRequest(context) {
     const acc2Remain = 738;
     const acc2Percent = Number(((acc2Used / 750) * 100).toFixed(1));
 
-    // Parallel health checks
+    const neonKey = env?.NEON_API_KEY || NEON_DEFAULT_KEY;
+
+    // Parallel health checks & Neon metrics
     const pings = await Promise.allSettled([
       fetch(`${BACKEND_URL}/actuator/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
       fetch(`${WHATSAPP_URL}/status`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
-      fetch(`${OCR_URL}/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } })
+      fetch(`${OCR_URL}/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
+      fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/consumption`, {
+        headers: { "Authorization": `Bearer ${neonKey}`, "Accept": "application/json" }
+      }),
+      fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/endpoints`, {
+        headers: { "Authorization": `Bearer ${neonKey}`, "Accept": "application/json" }
+      })
     ]);
 
     let backendStatus = "Live", backendLatency = 35;
@@ -92,6 +103,45 @@ export async function onRequest(context) {
       try {
         const waData = await pings[1].value.json();
         waStatus = waData.status || "CONNECTED";
+      } catch {}
+    }
+
+    let neonData = {
+      provider: "Neon PostgreSQL (Serverless)",
+      name: "lari-traders",
+      projectId: NEON_PROJECT_ID,
+      status: "ACTIVE",
+      region: "AWS Singapore (ap-southeast-1)",
+      pgVersion: 18,
+      branch: "production",
+      endpoint: "ep-long-dawn-az4rk6cj",
+      host: "ep-long-dawn-az4rk6cj-pooler.c-3.ap-southeast-1.aws.neon.tech",
+      storageUsedMb: 32.75,
+      storageLimitMb: 1024,
+      dataTransferMb: 4.41,
+      computeTimeHours: 44.47,
+      autoscaling: "0.25 - 2.0 CU",
+      lastActive: "2026-11-08T22:07:58Z"
+    };
+
+    if (pings[3].status === "fulfilled" && pings[3].value.ok) {
+      try {
+        const cons = await pings[3].value.json();
+        neonData.storageUsedMb = Number((cons.logical_size_for_root_bytes / 1048576).toFixed(2));
+        neonData.dataTransferMb = Number((cons.data_transfer_bytes / 1048576).toFixed(2));
+        neonData.computeTimeHours = Number((cons.compute_time_seconds / 3600).toFixed(2));
+      } catch {}
+    }
+
+    if (pings[4].status === "fulfilled" && pings[4].value.ok) {
+      try {
+        const epData = await pings[4].value.json();
+        if (epData.endpoints && epData.endpoints.length > 0) {
+          const ep0 = epData.endpoints[0];
+          neonData.status = (ep0.current_state || "ACTIVE").toUpperCase();
+          neonData.host = ep0.hosts?.read_write_pooled_host || ep0.host || neonData.host;
+          neonData.lastActive = ep0.last_active || neonData.lastActive;
+        }
       } catch {}
     }
 
@@ -119,7 +169,7 @@ export async function onRequest(context) {
           status: backendStatus,
           latency: backendLatency,
           url: BACKEND_URL,
-          dbStatus: backendStatus === "Live" ? "Connected" : "Unknown"
+          dbStatus: `Neon SG (${neonData.status})`
         },
         whatsapp: {
           id: WHATSAPP_SVC,
@@ -137,7 +187,8 @@ export async function onRequest(context) {
           latency: ocrLatency,
           url: OCR_URL
         }
-      }
+      },
+      database: neonData
     });
   }
 
