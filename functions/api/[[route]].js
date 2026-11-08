@@ -9,7 +9,6 @@ const BACKEND_URL = "https://laritraders-backend.onrender.com";
 const WHATSAPP_URL = "https://laritraders-whatsapp.onrender.com";
 const OCR_URL = "https://laritraders-ocr.onrender.com";
 
-const NEON_DEFAULT_KEY = "napi_mdo9a79lens9rr4nm7mmy271ttgi4mzrito6zuphoaij27r2wb6pcd3fxf4c7p78";
 const NEON_PROJECT_ID = "wild-violet-62972724";
 
 const corsHeaders = {
@@ -80,19 +79,19 @@ export async function onRequest(context) {
     const acc2Remain = 738;
     const acc2Percent = Number(((acc2Used / 750) * 100).toFixed(1));
 
-    const neonKey = env?.NEON_API_KEY || NEON_DEFAULT_KEY;
+    const neonKey = env?.NEON_API_KEY || "";
 
-    // Parallel health checks & Neon metrics
+    // Parallel health checks & Neon metrics (only if neonKey configured)
     const pings = await Promise.allSettled([
       fetch(`${BACKEND_URL}/actuator/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
       fetch(`${WHATSAPP_URL}/status`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
       fetch(`${OCR_URL}/health`, { headers: { "User-Agent": "LariCloudOps/2.0" } }),
-      fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/consumption`, {
+      neonKey ? fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/consumption`, {
         headers: { "Authorization": `Bearer ${neonKey}`, "Accept": "application/json" }
-      }),
-      fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/endpoints`, {
+      }) : Promise.resolve(null),
+      neonKey ? fetch(`https://console.neon.tech/api/v2/projects/${NEON_PROJECT_ID}/endpoints`, {
         headers: { "Authorization": `Bearer ${neonKey}`, "Accept": "application/json" }
-      })
+      }) : Promise.resolve(null)
     ]);
 
     let backendStatus = "Live", backendLatency = 35;

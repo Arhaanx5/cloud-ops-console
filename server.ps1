@@ -21,11 +21,11 @@ if (Test-Path $ENV_FILE) {
     }
 }
 
-# Render API Keys from Environment
-$ACC1_KEY     = if ($env:RENDER_ACC1_KEY) { $env:RENDER_ACC1_KEY } else { "rnd_RGwnc0JnFnTrKcrO6YAUMg1MHAMl" }
+# Render API Keys from Environment (.env)
+$ACC1_KEY     = $env:RENDER_ACC1_KEY
 $BACKEND_SVC  = "srv-db141g60tbcc739djhi0"
 
-$ACC2_KEY     = if ($env:RENDER_ACC2_KEY) { $env:RENDER_ACC2_KEY } else { "rnd_Ds6kefykRNVDdJ5ka2Gyf7hNkD2j" }
+$ACC2_KEY     = $env:RENDER_ACC2_KEY
 $WHATSAPP_SVC = "srv-dbodrlrm8hqs7389qlmg"
 $OCR_SVC      = "srv-dbodrlrm8hqs7389qlkg"
 
@@ -33,10 +33,10 @@ $OCR_SVC      = "srv-dbodrlrm8hqs7389qlkg"
 $WHATSAPP_URL = "https://laritraders-whatsapp.onrender.com"
 $OCR_URL      = "https://laritraders-ocr.onrender.com"
 $BACKEND_URL  = "https://laritraders-backend.onrender.com"
-$INTERNAL_SEC = "lari-wa-internal-secret-uat-2024"
+$INTERNAL_SEC = if ($env:INTERNAL_SECRET) { $env:INTERNAL_SECRET } else { "lari-wa-internal-secret-uat-2024" }
 
 # Neon PostgreSQL Cloud Config & Telemetry Cache
-$NEON_API_KEY = if ($env:NEON_API_KEY) { $env:NEON_API_KEY } else { "napi_mdo9a79lens9rr4nm7mmy271ttgi4mzrito6zuphoaij27r2wb6pcd3fxf4c7p78" }
+$NEON_API_KEY = $env:NEON_API_KEY
 $NEON_PROJ_ID = if ($env:NEON_PROJECT_ID) { $env:NEON_PROJECT_ID } else { "wild-violet-62972724" }
 $NEON_ORG_ID  = if ($env:NEON_ORG_ID) { $env:NEON_ORG_ID } else { "org-dry-paper-41776222" }
 
