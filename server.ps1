@@ -1,4 +1,4 @@
-﻿<#
+<#
     FMCG Shop — Enterprise Cloud Operations & Governance Server (V2)
     Port: 4040
     Inspired by: Oracle WebLogic Admin Console + AWS Systems Manager / CloudWatch
