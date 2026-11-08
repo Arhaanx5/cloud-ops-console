@@ -209,15 +209,6 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Secrets Vault Table */
-    .vault-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; }
-    .vault-table th { text-align: left; padding: 10px 12px; color: var(--text-subtle); border-bottom: 1px solid var(--card-border); font-size: 11px; text-transform: uppercase; }
-    .vault-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-    .vault-key { color: #93c5fd; font-weight: 600; }
-    .vault-val-box { display: flex; align-items: center; gap: 8px; }
-    .vault-val-text { background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06); flex: 1; word-break: break-all; }
-    .vault-val-masked { letter-spacing: 2px; color: var(--text-subtle); }
-
     /* Audit Events Timeline */
     .event-item {
       display: flex; gap: 14px; align-items: flex-start;
@@ -378,7 +369,7 @@
           <div class="svc-metrics">
             <div class="metric-item">
               <span class="metric-label">Latency</span>
-              <span class="metric-value latency-fast" id="lat-backend">95 ms</span>
+              <span class="metric-value latency-fast" id="lat-backend">187 ms</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Database</span>
@@ -395,7 +386,6 @@
           <button class="btn btn-sm btn-primary" onclick="triggerDeploy('backend', false)">🔄 Redeploy</button>
           <button class="btn btn-sm" onclick="triggerDeploy('backend', true)">⚡ Clean Cache</button>
           <button class="btn btn-sm" onclick="triggerRestart('backend')">🔁 Restart</button>
-          <button class="btn btn-sm" onclick="openVault('backend')">🔑 Env Vault</button>
           <button class="btn btn-sm" onclick="openAudit('backend')">📜 Audit Log</button>
         </div>
       </div>
@@ -416,7 +406,7 @@
           <div class="svc-metrics">
             <div class="metric-item">
               <span class="metric-label">Latency</span>
-              <span class="metric-value latency-fast" id="lat-wa">110 ms</span>
+              <span class="metric-value latency-fast" id="lat-wa">131 ms</span>
             </div>
             <div class="metric-item">
               <span class="metric-label">Session State</span>
@@ -433,7 +423,6 @@
           <button class="btn btn-sm btn-warning" onclick="toggleSuspend('wa')" id="btn-suspend-wa">⏸️ Suspend (Sleep)</button>
           <button class="btn btn-sm btn-primary" onclick="triggerDeploy('wa', false)">🔄 Redeploy</button>
           <button class="btn btn-sm" onclick="triggerRestart('wa')">🔁 Restart</button>
-          <button class="btn btn-sm" onclick="openVault('wa')">🔑 Env Vault</button>
           <button class="btn btn-sm" onclick="openAudit('wa')">📜 Audit Log</button>
         </div>
       </div>
@@ -462,7 +451,7 @@
             </div>
             <div class="metric-item">
               <span class="metric-label">Security</span>
-              <span class="metric-value" style="color: #34d399;">X-Secret (403 Safe)</span>
+              <span class="metric-value" style="color: #34d399;">X-Secret Enforced</span>
             </div>
           </div>
         </div>
@@ -471,7 +460,6 @@
           <button class="btn btn-sm btn-warning" onclick="toggleSuspend('ocr')" id="btn-suspend-ocr">⏸️ Suspend (Sleep)</button>
           <button class="btn btn-sm btn-primary" onclick="triggerDeploy('ocr', false)">🔄 Redeploy</button>
           <button class="btn btn-sm" onclick="triggerRestart('ocr')">🔁 Restart</button>
-          <button class="btn btn-sm" onclick="openVault('ocr')">🔑 Env Vault</button>
           <button class="btn btn-sm" onclick="openAudit('ocr')">📜 Audit Log</button>
         </div>
       </div>
@@ -481,41 +469,12 @@
     <!-- Diagnostic Playground & Management Tabs -->
     <div class="tab-container">
       <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab('tab-vault')">🔑 Parameter & Secrets Vault</button>
-        <button class="tab-btn" onclick="switchTab('tab-audit')">📜 Deployment Audit Trail</button>
+        <button class="tab-btn active" onclick="switchTab('tab-audit')">📜 Deployment Audit Trail</button>
         <button class="tab-btn" onclick="switchTab('tab-sandbox')">🧪 Diagnostic Sandbox</button>
       </div>
 
-      <!-- Tab 1: Secrets Vault -->
-      <div class="tab-content active" id="tab-vault">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 13px; color: var(--text-muted);">Active Service:</span>
-            <select id="vaultSelect" class="btn btn-sm" onchange="loadVaultVars()" style="background: #0f172a;">
-              <option value="backend">laritraders-backend (Account 1)</option>
-              <option value="wa">laritraders-whatsapp (Account 2)</option>
-              <option value="ocr">laritraders-ocr (Account 2)</option>
-            </select>
-          </div>
-          <button class="btn btn-sm btn-success" onclick="saveVaultVars()">💾 Commit & Save to Cloud</button>
-        </div>
-
-        <table class="vault-table">
-          <thead>
-            <tr>
-              <th style="width: 35%;">Parameter Key</th>
-              <th style="width: 55%;">Value</th>
-              <th style="width: 10%;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="vaultBody">
-            <tr><td colspan="3" style="text-align: center; color: var(--text-subtle);">Select service to view parameters</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Tab 2: Deployment Audit Trail -->
-      <div class="tab-content" id="tab-audit">
+      <!-- Tab 1: Deployment Audit Trail -->
+      <div class="tab-content active" id="tab-audit">
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
           <span style="font-size: 13px; color: var(--text-muted);">Service:</span>
           <select id="auditSelect" class="btn btn-sm" onchange="loadAuditEvents()" style="background: #0f172a;">
@@ -529,7 +488,7 @@
         </div>
       </div>
 
-      <!-- Tab 3: Diagnostic Sandbox -->
+      <!-- Tab 2: Diagnostic Sandbox -->
       <div class="tab-content" id="tab-sandbox">
         <div class="sandbox-grid">
           
@@ -561,7 +520,6 @@
 
   <script>
     const API_BASE = window.location.origin.includes(':4040') ? 'http://localhost:4040' : '';
-    let currentVaultVars = [];
     let isWaSuspended = false;
     let isOcrSuspended = false;
 
@@ -572,7 +530,7 @@
         document.getElementById('pinGate').style.display = 'none';
         document.getElementById('mainDashboard').style.display = 'block';
         fetchLiveStatus();
-        loadVaultVars();
+        loadAuditEvents();
       }
     }
 
@@ -584,7 +542,7 @@
         document.getElementById('mainDashboard').style.display = 'block';
         showToast('Access Granted. Welcome Administrator.');
         fetchLiveStatus();
-        loadVaultVars();
+        loadAuditEvents();
       } else {
         document.getElementById('pinError').style.display = 'block';
       }
@@ -693,86 +651,6 @@
       }
     }
 
-    // ── Secrets Vault ──
-    async function loadVaultVars() {
-      const svc = document.getElementById('vaultSelect').value;
-      const tbody = document.getElementById('vaultBody');
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Fetching encrypted parameters...</td></tr>';
-
-      try {
-        const res = await fetch(`${API_BASE}/api/env-vars?service=${svc}`);
-        const data = await res.json();
-        currentVaultVars = data.envVars || [];
-
-        tbody.innerHTML = currentVaultVars.map((v, idx) => `
-          <tr>
-            <td class="vault-key">${v.key}</td>
-            <td>
-              <div class="vault-val-box">
-                <span class="vault-val-text vault-val-masked" id="val-${idx}">${'•'.repeat(Math.min(v.value.length, 24))}</span>
-                <button class="btn btn-sm" onclick="toggleSecret(${idx}, '${v.value.replace(/'/g, "\\'")}')">👁️</button>
-              </div>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-danger" onclick="deleteVar(${idx})">🗑️</button>
-            </td>
-          </tr>
-        `).join('') + `
-          <tr>
-            <td><input id="newKey" placeholder="NEW_VAR_KEY" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px; width:90%; font-family:var(--font-mono); font-size:11px;" /></td>
-            <td><input id="newVal" placeholder="value" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:6px; border-radius:4px; width:90%; font-family:var(--font-mono); font-size:11px;" /></td>
-            <td><button class="btn btn-sm btn-primary" onclick="addVar()">➕ Add</button></td>
-          </tr>
-        `;
-      } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="3" style="color:#f87171;">Failed to load vault: ${e.message}</td></tr>`;
-      }
-    }
-
-    function toggleSecret(idx, plainVal) {
-      const el = document.getElementById(`val-${idx}`);
-      if (el.classList.contains('vault-val-masked')) {
-        el.innerText = plainVal;
-        el.classList.remove('vault-val-masked');
-      } else {
-        el.innerText = '•'.repeat(Math.min(plainVal.length, 24));
-        el.classList.add('vault-val-masked');
-      }
-    }
-
-    function addVar() {
-      const k = document.getElementById('newKey').value.trim();
-      const v = document.getElementById('newVal').value.trim();
-      if (!k) return alert('Key is required');
-      currentVaultVars.push({ key: k, value: v });
-      loadVaultVars();
-    }
-
-    function deleteVar(idx) {
-      if (confirm(`Remove parameter ${currentVaultVars[idx].key}?`)) {
-        currentVaultVars.splice(idx, 1);
-        loadVaultVars();
-      }
-    }
-
-    async function saveVaultVars() {
-      const svc = document.getElementById('vaultSelect').value;
-      if (!confirm(`Commit ${currentVaultVars.length} parameters to ${svc}? Render will reload this service.`)) return;
-
-      showToast('Pushing updated parameters to Render...');
-      try {
-        const res = await fetch(`${API_BASE}/api/env-vars?service=${svc}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(currentVaultVars)
-        });
-        const data = await res.json();
-        showToast(data.message || 'Parameters updated successfully!');
-      } catch (e) {
-        showToast('Save failed: ' + e.message);
-      }
-    }
-
     // ── Audit Events ──
     async function loadAuditEvents() {
       const svc = document.getElementById('auditSelect').value;
@@ -795,6 +673,12 @@
       } catch (e) {
         el.innerHTML = `<div style="color:#f87171;">Audit load failed: ${e.message}</div>`;
       }
+    }
+
+    function openAudit(svc) {
+      document.getElementById('auditSelect').value = svc;
+      switchTab('tab-audit');
+      loadAuditEvents();
     }
 
     // ── Diagnostics ──

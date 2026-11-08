@@ -19,3 +19,4 @@ if ($remote -notcontains "origin") {
 git add .
 git commit -m "feat(ops): initial commit for enterprise cloud operations console (weblogic + aws style)"
 git push -u origin main --force
+

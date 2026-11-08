@@ -370,69 +370,6 @@ try {
             continue
         }
 
-        # ── API: Get Environment Variables (Secrets Vault) ──
-        if ($urlPath -eq "/api/env-vars" -and $method -eq "GET") {
-            $svcParam = if ($request.QueryString["service"]) { $request.QueryString["service"] } else { "backend" }
-            $info = Get-ServiceInfo $svcParam
-
-            if (-not $info) {
-                Send-Json $response @{ success = $false; error = "Invalid service specified" } 400
-                continue
-            }
-
-            try {
-                $h = @{ Authorization = "Bearer $($info.Key)" }
-                $rawVars = Invoke-RestMethod -Uri "https://api.render.com/v1/services/$($info.SvcId)/env-vars" -Headers $h
-                $varList = @()
-                foreach ($item in $rawVars) {
-                    $varList += @{
-                        key   = $item.envVar.key
-                        value = $item.envVar.value
-                    }
-                }
-                Send-Json $response @{ success = $true; service = $info.Name; envVars = $varList }
-            } catch {
-                Send-Json $response @{ success = $false; error = $_.Exception.Message } 500
-            }
-            continue
-        }
-
-        # ── API: Update Environment Variables (Secrets Vault) ──
-        if ($urlPath -eq "/api/env-vars" -and $method -eq "POST") {
-            $svcParam = $request.QueryString["service"]
-            $info = Get-ServiceInfo $svcParam
-
-            if (-not $info) {
-                Send-Json $response @{ success = $false; error = "Invalid service specified" } 400
-                continue
-            }
-
-            $reader = New-Object System.IO.StreamReader($request.InputStream)
-            $reqBodyRaw = $reader.ReadToEnd()
-            $reqJson = $reqBodyRaw | ConvertFrom-Json
-
-            # reqJson should be array of @{ key = "...", value = "..." }
-            try {
-                $h = @{
-                    "Authorization" = "Bearer $($info.Key)"
-                    "Content-Type"  = "application/json"
-                }
-                $renderPayload = @()
-                foreach ($v in $reqJson) {
-                    $renderPayload += @{
-                        key   = $v.key
-                        value = $v.value
-                    }
-                }
-                $putBody = $renderPayload | ConvertTo-Json
-                Invoke-RestMethod -Uri "https://api.render.com/v1/services/$($info.SvcId)/env-vars" -Method Put -Headers $h -Body $putBody | Out-Null
-                Send-Json $response @{ success = $true; message = "Environment variables updated successfully for $($info.Name)" }
-            } catch {
-                Send-Json $response @{ success = $false; error = $_.Exception.Message } 500
-            }
-            continue
-        }
-
         # ── API: Test Gemini AI Prompt ──
         if ($urlPath -eq "/api/test-ai" -and $method -eq "POST") {
             $reader = New-Object System.IO.StreamReader($request.InputStream)

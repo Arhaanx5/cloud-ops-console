@@ -242,40 +242,7 @@ export async function onRequest(context) {
     return jsonResponse({ success: true, service: meta.name, events });
   }
 
-  // 8. Secrets & Env Vars (GET & PUT)
-  if (path.endsWith("/env-vars")) {
-    const service = url.searchParams.get("service") || "backend";
-    const meta = getServiceMeta(service, env);
-    if (!meta || !meta.key) return jsonResponse({ error: "API Key not configured in environment" }, 400);
-
-    if (request.method === "GET") {
-      const res = await fetch(`https://api.render.com/v1/services/${meta.id}/env-vars`, {
-        headers: { Authorization: `Bearer ${meta.key}` }
-      });
-      const raw = await res.json();
-      const envVars = (Array.isArray(raw) ? raw : []).map(r => ({
-        key: r.envVar?.key,
-        value: r.envVar?.value
-      }));
-      return jsonResponse({ success: true, service: meta.name, envVars });
-    }
-
-    if (request.method === "POST" || request.method === "PUT") {
-      const vars = await request.json();
-      const putBody = (Array.isArray(vars) ? vars : []).map(v => ({ key: v.key, value: v.value }));
-      const res = await fetch(`https://api.render.com/v1/services/${meta.id}/env-vars`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${meta.key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(putBody)
-      });
-      return jsonResponse({ success: res.ok, message: "Variables updated successfully" });
-    }
-  }
-
-  // 9. Diagnostic Gemini AI Runner
+  // 8. Diagnostic Gemini AI Runner
   if (path.endsWith("/test-ai") && request.method === "POST") {
     try {
       const body = await request.json();
